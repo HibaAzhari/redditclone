@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
-import project.redditclone.model.User;
-import project.redditclone.model.Subreddit;
-
 import java.time.Instant;
 
 @Entity

@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
-import project.redditclone.model.User;
-import project.redditclone.model.Post;
-
 import java.time.Instant;
 import java.util.List;
 
