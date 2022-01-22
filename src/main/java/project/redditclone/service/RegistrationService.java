@@ -6,11 +6,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.redditclone.dto.RegistrationRequest;
+import project.redditclone.exception.RedditcloneException;
 import project.redditclone.model.NotificationEmail;
 import project.redditclone.model.User;
 import project.redditclone.model.VerificationToken;
+import project.redditclone.repository.UserRepository;
 import project.redditclone.repository.VerificationTokenRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static java.time.Instant.now;
@@ -24,6 +27,7 @@ public class RegistrationService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final MailContentBuilder mailContentBuilder;
     private final MailService mailService;
+    private UserRepository userRepository;
 
     @Transactional
     public void signup(RegistrationRequest registrationRequest) {
@@ -51,5 +55,18 @@ public class RegistrationService {
 
     private String encodePassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    public void verifyAccount(String token) {
+        Optional<VerificationToken> verificationTokenOptional = verificationTokenRepository.findByToken(token);
+        verificationTokenOptional.orElseThrow(() -> new RedditcloneException("Invalid Token"));
+        fetchUserAndEnable(verificationTokenOptional.get());
+    }
+
+    @Transactional
+    public void fetchUserAndEnable(VerificationToken verificationToken) {
+        String username = verificationToken.getUser().getUsername();
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RedditcloneException("User not found. username: " + username));
+        user.setActive(true);
     }
 }
