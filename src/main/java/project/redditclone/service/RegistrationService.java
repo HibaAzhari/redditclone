@@ -6,17 +6,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.redditclone.dto.RegistrationRequest;
+import project.redditclone.model.NotificationEmail;
 import project.redditclone.model.User;
-import project.redditclone.repository.UserRepository;
+import project.redditclone.model.VerificationToken;
+import project.redditclone.repository.VerificationTokenRepository;
+
+import java.util.UUID;
 
 import static java.time.Instant.now;
+import static project.redditclone.util.Constants.ACTIVATION_EMAIL;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class RegistrationService {
-    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final MailContentBuilder mailContentBuilder;
+    private final MailService mailService;
 
     @Transactional
     public void signup(RegistrationRequest registrationRequest) {
@@ -26,6 +33,20 @@ public class RegistrationService {
         user.setPassword(encodePassword(registrationRequest.getPassword()));
         user.setJoined(now());
         user.setActive(false);
+
+        String token = generateVerificationToken(user);
+        String message = mailContentBuilder.build("Thank you for signing up to Spring Reddit, please click on the below url to activate your account : "
+                + ACTIVATION_EMAIL + "/" + token);
+        mailService.sendMail(new NotificationEmail("Please activate your account", user.getEmail(), message));
+    }
+
+    private String generateVerificationToken(User user) {
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(user);
+        verificationTokenRepository.save(verificationToken);
+        return token;
     }
 
     private String encodePassword(String password) {
